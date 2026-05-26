@@ -4,15 +4,13 @@ import pandas as pd
 # ==========================================
 # 0. 簡易ログイン機能
 # ==========================================
-st.set_page_config(page_title="MicroAd Slide Generator", layout="wide")
+st.set_page_config(page_title="MicroAd Slide Generator v3", layout="wide")
 
 def check_password():
-    """パスワードが正しければTrueを返す関数"""
     def password_entered():
-        # ▼▼ ここがパスワードです。好きなものに変更してください ▼▼
         if st.session_state["password"] == "microad2026":
             st.session_state["password_correct"] = True
-            del st.session_state["password"]  # セキュリティのため保持を解除
+            del st.session_state["password"]
         else:
             st.session_state["password_correct"] = False
 
@@ -28,9 +26,6 @@ def check_password():
         return False
     return True
 
-# ==========================================
-# ここから下は、パスワード正解時のみ実行・表示されます
-# ==========================================
 if check_password():
 
     # ==========================================
@@ -44,33 +39,43 @@ if check_password():
             padding: 20px;
             border-radius: 8px;
             border-top: 5px solid #00a0e9;
-            border-bottom: 2px solid #ffb6c1; /* 少しピンクのアクセント */
+            border-bottom: 2px solid #ffb6c1;
             margin-bottom: 30px;
         }
         </style>
         <div class="brand-header">
-            <h1 style="margin: 0; font-size: 28px;">🎯 MicroAd 提案スライド構成ジェネレーター</h1>
-            <p style="margin: 5px 0 0 0; color: #555;">業種とデータアセットを選択し、NotebookLM用の最適な指示文を生成します。</p>
+            <h1 style="margin: 0; font-size: 28px;">🎯 MicroAd 提案プロンプト生成（v3）</h1>
+            <p style="margin: 5px 0 0 0; color: #555;">業種・配信手法・形式に合わせてNotebookLMへの指示文を最適化します。</p>
         </div>
     """, unsafe_allow_html=True)
 
     # ==========================================
     # 2. 選択肢の定義
     # ==========================================
+    # サービス認知を追加
     INDUSTRIES = [
         "BtoB", "人材（採用）", "自治体", "学校", "小売り",
-        "公営競技", "イベント", "ディーラー", "不動産", "流通", "金融"
+        "公営競技", "イベント", "ディーラー", "不動産", "流通", "金融", "サービス認知"
     ]
 
+    # 購買データを追加
     DATA_ASSETS = [
         "位置情報", "ワンキャリア", "APP起動データ",
-        "シラレル（BtoB属性）", "年収", "マイクロアドデータ（4億UB）"
+        "シラレル（BtoB属性）", "年収", "マイクロアドデータ（4億UB）", "購買データ"
     ]
+
+    # 配信手法
+    AD_METHODS = [
+        "ディスプレイ（静止画）", "ディスプレイ（動画）", "Meta", "Youtube", "TVer"
+    ]
+
+    # 出力形式
+    OUTPUT_FORMATS = ["提案資料用（複数スライド構成）", "ペライチ（1ページまとめ用）"]
 
     # ==========================================
     # 3. ロジック：プロンプト生成
     # ==========================================
-    def generate_prompt(uploaded_file, industry, selected_assets):
+    def generate_prompt(uploaded_file, industry, selected_assets, selected_methods, output_format):
         try:
             xls = pd.ExcelFile(uploaded_file)
             data_text = ""
@@ -81,20 +86,39 @@ if check_password():
                 data_text += df.to_csv(index=False)
             
             asset_names = "、".join(selected_assets)
+            method_names = "、".join(selected_methods)
             
+            # 形式に合わせた指示内容の分岐
+            if "ペライチ" in output_format:
+                format_instruction = """
+構成は「ペライチ（1枚もの）」として、以下の項目を簡潔かつインパクトのある構造化テキストでまとめてください：
+1. 提案の核心（エグゼクティブサマリー）
+2. ターゲットと活用データの選定理由
+3. 推奨する配信手法とシナリオ
+4. 合計予算と期待成果（シミュレーションのハイライト）
+"""
+            else:
+                format_instruction = f"""
+構成は「複数スライドの提案資料」として、以下の流れで詳細に作成してください：
+1. 【{industry}】業界が今抱える課題と本施策の狙い
+2. 活用データ（{asset_names}）の強みとターゲティングロジック
+3. 配信手法（{method_names}）を組み合わせた具体的アプローチ
+4. 配信シミュレーションの数値分析（正確な引用）
+5. 来店計測やブランドリフト等の期待できる成果
+"""
+
             prompt = f"""あなたはMicroAdの戦略立案責任者です。
-今回、クライアントの業種【{industry}】向けに、以下の【活用データ】を用いた集客最大化プランの「スライド資料」を作成してください。
+クライアントの業種【{industry}】向けに、提案を作成してください。
 
 【対象業種】: {industry}
-【今回活用するデータ】: {asset_names}
-【デザインのトンマナ】: 白基調で、水色をメインカラー、アクセントに少量のピンクを使用した清潔感と信頼感のあるデザインを想定してください。
+【活用データ】: {asset_names}
+【配信手法】: {method_names}
+【デザインのトンマナ】: 白基調、メインカラー水色、アクセントにピンク。
 
-以下のシミュレーションデータを読み取り、選択されたMicroAd独自のデータの優位性を活かしたストーリーを組み立ててください。
+{format_instruction}
 
-### 指示事項：
-1. スライド構成は「【{industry}】業界の課題」→「活用データ（{asset_names}）の解説」→「具体的なアプローチ」→「数値シミュレーション」の流れで作ること。
-2. 添付データの「セグメント」「予算」「単価（CPC）」などを正確に引用し、シミュレーションスライドに反映すること。
-3. 指定したトンマナ（白・水色・ピンク）に合うような、各スライドのビジュアルイメージ（配置する図解の提案など）もテキストで補足すること。
+### 配信手法に関する補足指示：
+- 選択された「{method_names}」のそれぞれの特性（例：TVerならTVCMの補完、Youtubeなら態度変容、MetaならSNS親和性など）を考慮した解説を入れてください。
 
 ### 配信シミュレーションデータ (SIM):
 {data_text}
@@ -109,29 +133,29 @@ if check_password():
     col1, col2 = st.columns([1, 1.2])
 
     with col1:
-        st.subheader("1. 提案設定の入力")
-        selected_industry = st.selectbox("📂 提案先の業種を選択してください", INDUSTRIES)
-        selected_assets = st.multiselect(
-            "📊 活用するデータを選択してください（複数選択可）",
-            DATA_ASSETS,
-            default=["マイクロアドデータ（4億UB）"]
-        )
+        st.subheader("1. 提案設定")
+        selected_industry = st.selectbox("📂 提案先の業種", INDUSTRIES)
+        selected_assets = st.multiselect("📊 活用データ", DATA_ASSETS, default=["マイクロアドデータ（4億UB）"])
+        selected_methods = st.multiselect("📺 配信手法", AD_METHODS, default=["ディスプレイ（静止画）"])
+        output_format = st.radio("📝 出力形式", OUTPUT_FORMATS)
+        
+        st.divider()
         up_file = st.file_uploader("📈 SIMファイル（Excel）をアップロード", type=["xlsx", "xls"])
 
     with col2:
-        st.subheader("2. NotebookLM用 指示文")
+        st.subheader("2. NotebookLM用 出力")
         
-        if up_file and selected_industry and selected_assets:
-            with st.spinner("プロンプトを生成中..."):
-                final_prompt = generate_prompt(up_file, selected_industry, selected_assets)
+        if up_file and selected_industry and selected_assets and selected_methods:
+            with st.spinner("最適化されたプロンプトを生成中..."):
+                final_prompt = generate_prompt(up_file, selected_industry, selected_assets, selected_methods, output_format)
                 
-            st.success("✅ 生成完了！以下のテキストをコピーしてNotebookLMに貼り付けてください。")
-            st.text_area("📋 コピー用テキスト", value=final_prompt, height=450)
+            st.success("✅ 生成完了！コピーしてNotebookLMへ。")
+            st.text_area("📋 指示文", value=final_prompt, height=550)
             st.download_button(
-                label="📄 テキストファイルとして保存",
+                label="📄 保存する",
                 data=final_prompt,
                 file_name=f"NotebookLM_Prompt_{selected_industry}.txt",
                 mime="text/plain"
             )
         else:
-            st.info("👈 左側のパネルで業種・データを選択し、Excelファイルをアップロードすると、ここに指示文が表示されます。")
+            st.info("👈 設定を完了し、Excelをアップロードしてください。")
