@@ -4,7 +4,7 @@ import pandas as pd
 # ==========================================
 # 0. 簡易ログイン機能
 # ==========================================
-st.set_page_config(page_title="MicroAd Slide Generator v3", layout="wide")
+st.set_page_config(page_title="MicroAd Slide Generator v3.1", layout="wide")
 
 def check_password():
     def password_entered():
@@ -44,7 +44,7 @@ if check_password():
         }
         </style>
         <div class="brand-header">
-            <h1 style="margin: 0; font-size: 28px;">🎯 MicroAd 提案プロンプト生成（v3）</h1>
+            <h1 style="margin: 0; font-size: 28px;">🎯 MicroAd 提案プロンプト生成（v3.1）</h1>
             <p style="margin: 5px 0 0 0; color: #555;">業種・配信手法・形式に合わせてNotebookLMへの指示文を最適化します。</p>
         </div>
     """, unsafe_allow_html=True)
@@ -52,24 +52,20 @@ if check_password():
     # ==========================================
     # 2. 選択肢の定義
     # ==========================================
-    # サービス認知を追加
     INDUSTRIES = [
         "BtoB", "人材（採用）", "自治体", "学校", "小売り",
         "公営競技", "イベント", "ディーラー", "不動産", "流通", "金融", "サービス認知"
     ]
 
-    # 購買データを追加
     DATA_ASSETS = [
         "位置情報", "ワンキャリア", "APP起動データ",
         "シラレル（BtoB属性）", "年収", "マイクロアドデータ（4億UB）", "購買データ"
     ]
 
-    # 配信手法
     AD_METHODS = [
         "ディスプレイ（静止画）", "ディスプレイ（動画）", "Meta", "Youtube", "TVer"
     ]
 
-    # 出力形式
     OUTPUT_FORMATS = ["提案資料用（複数スライド構成）", "ペライチ（1ページまとめ用）"]
 
     # ==========================================
@@ -88,7 +84,6 @@ if check_password():
             asset_names = "、".join(selected_assets)
             method_names = "、".join(selected_methods)
             
-            # 形式に合わせた指示内容の分岐
             if "ペライチ" in output_format:
                 format_instruction = """
 構成は「ペライチ（1枚もの）」として、以下の項目を簡潔かつインパクトのある構造化テキストでまとめてください：
@@ -150,12 +145,22 @@ if check_password():
                 final_prompt = generate_prompt(up_file, selected_industry, selected_assets, selected_methods, output_format)
                 
             st.success("✅ 生成完了！コピーしてNotebookLMへ。")
-            st.text_area("📋 指示文", value=final_prompt, height=550)
+            st.text_area("📋 指示文", value=final_prompt, height=450)
             st.download_button(
                 label="📄 保存する",
                 data=final_prompt,
                 file_name=f"NotebookLM_Prompt_{selected_industry}.txt",
                 mime="text/plain"
             )
+            
+            # --- 追加：ロゴ消去ツールへの導線 ---
+            st.divider()
+            st.subheader("3. 仕上げ（提出用PDFの作成）")
+            st.info("""
+            NotebookLMで出力したPDFの右下には「NotebookLM」のロゴ透かしが入ります。
+            クライアント提出用にロゴを消去したい場合は、以下の専用ツール（外部サイト）をご活用ください。
+            """)
+            st.markdown("👉 **[NotebookLM ロゴリムーバーを開く](https://notebooklmremover.com/ja)**")
+            
         else:
             st.info("👈 設定を完了し、Excelをアップロードしてください。")
