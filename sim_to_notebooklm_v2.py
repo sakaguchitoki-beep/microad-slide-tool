@@ -4,7 +4,7 @@ import pandas as pd
 # ==========================================
 # 0. 簡易ログイン機能
 # ==========================================
-st.set_page_config(page_title="MicroAd Slide Generator v3.1", layout="wide")
+st.set_page_config(page_title="MicroAd Slide Generator v3.2", layout="wide")
 
 def check_password():
     def password_entered():
@@ -44,7 +44,7 @@ if check_password():
         }
         </style>
         <div class="brand-header">
-            <h1 style="margin: 0; font-size: 28px;">🎯 MicroAd 提案プロンプト生成（v3.1）</h1>
+            <h1 style="margin: 0; font-size: 28px;">🎯 MicroAd 提案プロンプト生成（v3.2）</h1>
             <p style="margin: 5px 0 0 0; color: #555;">業種・配信手法・形式に合わせてNotebookLMへの指示文を最適化します。</p>
         </div>
     """, unsafe_allow_html=True)
@@ -84,13 +84,18 @@ if check_password():
             asset_names = "、".join(selected_assets)
             method_names = "、".join(selected_methods)
             
+            # --- ペライチの指示を「絶対に1ページにするよう」強力に修正 ---
             if "ペライチ" in output_format:
                 format_instruction = """
-構成は「ペライチ（1枚もの）」として、以下の項目を簡潔かつインパクトのある構造化テキストでまとめてください：
-1. 提案の核心（エグゼクティブサマリー）
-2. ターゲットと活用データの選定理由
-3. 推奨する配信手法とシナリオ
-4. 合計予算と期待成果（シミュレーションのハイライト）
+【超重要・厳守事項】
+構成は「ペライチ（1ページ、またはスライド1枚のみ）」です。
+絶対に複数ページ・複数スライドに分割しないでください。すべての情報を「1つの画面内に収まる文字数とレイアウト」で極限まで凝縮して出力してください。
+
+以下の4要素を、箇条書きなどを活用して1ページ内にデザインしてください：
+1. 【提案の核心】なぜこの施策をやるべきか（サマリー）
+2. 【ターゲット】誰に当てるのか（データ選定理由）
+3. 【配信手法】どう当てるのか（手法とシナリオ）
+4. 【期待成果】いくらで何が得られるのか（SIMハイライト）
 """
             else:
                 format_instruction = f"""
@@ -153,7 +158,6 @@ if check_password():
                 mime="text/plain"
             )
             
-            # --- 追加：ロゴ消去ツールへの導線 ---
             st.divider()
             st.subheader("3. 仕上げ（提出用PDFの作成）")
             st.info("""
